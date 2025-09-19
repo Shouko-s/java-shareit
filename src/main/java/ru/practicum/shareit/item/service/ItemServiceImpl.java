@@ -51,8 +51,8 @@ public class ItemServiceImpl implements ItemService {
             throw new ForbiddenException("Только владелец имеет доступ");
         }
 
-        if (name != null && name.isBlank()) item.setName(name);
-        if (description != null && description.isBlank()) item.setDescription(description);
+        if (name != null && !name.isBlank()) item.setName(name);
+        if (description != null && !description.isBlank()) item.setDescription(description);
         if (available != null) item.setAvailable(available);
 
         log.info("Предмет обновлен id={}", itemId);

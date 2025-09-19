@@ -12,7 +12,7 @@ public interface ItemRepo {
 
     Optional<Item> getItemById(Long id);
 
-    List<Item> getAllItems(Long userId);
+    List<Item> getAllItemsOfUser(Long userId);
 
     List<Item> search(String text);
 }

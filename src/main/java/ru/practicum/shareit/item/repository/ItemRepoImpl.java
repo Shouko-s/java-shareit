@@ -28,7 +28,7 @@ public class ItemRepoImpl implements ItemRepo {
     }
 
     @Override
-    public List<Item> getAllItems(Long userId) {
+    public List<Item> getAllItemsOfUser(Long userId) {
         return items.values().stream()
                 .filter(item -> Objects.equals(item.getOwner().getId(), userId))
                 .toList();
@@ -36,18 +36,11 @@ public class ItemRepoImpl implements ItemRepo {
 
     @Override
     public List<Item> search(String text) {
-        List<Item> filter1 = new ArrayList<>(items.values().stream()
-                .filter(item -> item.getDescription() != null)
-                .filter(item -> item.getDescription().toLowerCase().contains(text) && item.getAvailable())
-                .toList());
-
-        List<Item> filter2 = items.values().stream()
-                .filter(item -> item.getName() != null)
-                .filter(item -> item.getName().toLowerCase().contains(text) && item.getAvailable())
+        String searchText = text.toLowerCase();
+        return items.values().stream()
+                .filter(Item::getAvailable)
+                .filter(item -> item.getDescription().toLowerCase().contains(searchText) || item.getName().toLowerCase().contains(searchText))
                 .toList();
-        filter1.addAll(filter2);
-
-        return filter1;
     }
 
 

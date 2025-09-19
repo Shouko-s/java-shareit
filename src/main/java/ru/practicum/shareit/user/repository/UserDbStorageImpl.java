@@ -4,6 +4,7 @@ import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,6 +30,11 @@ public class UserDbStorageImpl implements UserRepo {
         return users.values().stream()
                 .filter(u -> u.getEmail().equalsIgnoreCase(email))
                 .findFirst();
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return users.values().stream().toList();
     }
 
     @Override

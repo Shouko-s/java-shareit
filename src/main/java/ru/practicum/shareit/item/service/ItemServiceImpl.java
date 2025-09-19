@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -15,27 +16,36 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ItemServiceImpl implements ItemService {
     private final ItemRepo itemRepo;
     private final UserRepo userRepo;
-    private final ItemMapper itemMapper = new ItemMapper();
+    private final ItemMapper mapper;
 
     @Override
-    public Item addItem(long ownerId, ItemDto dto) {
+    public ItemDto addItem(long ownerId, ItemDto dto) {
         User user = getUserOrThrow(ownerId);
-        Item item = itemMapper.dtoToItem(dto, user, null);
-        return itemRepo.addItem(item);
+        Item item = mapper.dtoToItem(dto, user);
+        log.info("Предмет добавлен item={}", item.toString());
+        return mapper.itemToDto(itemRepo.addItem(item));
     }
 
     @Override
-    public Item updateItem(Long userId, Long itemId, ItemDto itemDto) {
-
-        getUserOrThrow(userId);
-        Item item = getItemOrThrow(itemId);
+    public ItemDto updateItem(Long userId, Long itemId, ItemDto itemDto) {
 
         String name = itemDto.getName();
         String description = itemDto.getDescription();
         Boolean available = itemDto.getAvailable();
+
+        if ((name == null || name.isBlank())
+                && (description == null || description.isBlank())
+                && (available == null)) {
+            throw new IllegalArgumentException("Требуется минимум один аргумент");
+        }
+
+        getUserOrThrow(userId);
+        Item item = getItemOrThrow(itemId);
+
 
         if (!item.getOwner().getId().equals(userId)) {
             throw new ForbiddenException("Только владелец имеет доступ");
@@ -45,23 +55,29 @@ public class ItemServiceImpl implements ItemService {
         if (description != null) item.setDescription(description);
         if (available != null) item.setAvailable(available);
 
-        return itemRepo.updateItem(item);
+        log.info("Предмет обновлен id={}", itemId);
+        return mapper.itemToDto(itemRepo.updateItem(item));
     }
 
     @Override
-    public Item getItemById(Long id) {
-        return getItemOrThrow(id);
+    public ItemDto getItemById(Long itemId) {
+        log.info("Получен предмет по id={}", itemId);
+        return mapper.itemToDto(getItemOrThrow(itemId));
     }
 
     @Override
-    public List<Item> getAllItems(Long usrId) {
-        return itemRepo.getAllItems(usrId);
+    public List<ItemDto> getAllItems(Long userId) {
+        log.info("Получен список всех предметов пользователя по id={}", userId);
+        return itemRepo.getAllItemsOfUser(userId).stream()
+                .map(mapper::itemToDto).toList();
     }
 
     @Override
-    public List<Item> search(String text) {
-        if (text.isBlank()) return List.of();
-        return itemRepo.search(text);
+    public List<ItemDto> search(String text) {
+        if (text == null || text.isBlank()) return List.of();
+        log.info("Поиск по тексту text={}", text);
+        return itemRepo.search(text).stream()
+                .map(mapper::itemToDto).toList();
     }
 
 

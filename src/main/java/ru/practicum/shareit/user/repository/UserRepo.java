@@ -2,6 +2,7 @@ package ru.practicum.shareit.user.repository;
 
 import ru.practicum.shareit.user.model.User;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepo {
@@ -10,6 +11,8 @@ public interface UserRepo {
     Optional<User> getUserById(long id);
 
     Optional<User> getUserByEmail(String email);
+
+    List<User> getAllUsers();
 
     User updateUserById(long id, User user);
 

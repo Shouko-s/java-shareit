@@ -16,11 +16,11 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 public class ItemDto {
+    Long id;
     @NotBlank
     private String name;
     @NotBlank
     private String description;
     @NotNull
     private Boolean available;
-    private Long request;
 }

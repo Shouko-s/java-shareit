@@ -22,13 +22,13 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "description", length = 512)
+    @Column(length = 512)
     private String description;
 
-    @Column(name = "available")
+    @Column(name = "is_available", nullable = false)
     private Boolean available;
 
     @ManyToOne(fetch = FetchType.LAZY)

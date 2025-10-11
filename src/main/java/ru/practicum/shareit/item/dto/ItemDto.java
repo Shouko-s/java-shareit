@@ -2,10 +2,9 @@ package ru.practicum.shareit.item.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
+
+import java.util.List;
 
 /**
  * TODO Sprint add-controllers.
@@ -13,6 +12,7 @@ import lombok.ToString;
 
 @Getter
 @Builder
+@Setter
 @ToString
 @AllArgsConstructor
 public class ItemDto {
@@ -23,4 +23,8 @@ public class ItemDto {
     private String description;
     @NotNull
     private Boolean available;
+
+    private BookingShort lastBooking;
+    private BookingShort nextBooking;
+    private List<CommentDto> comments;
 }

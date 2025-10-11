@@ -28,17 +28,22 @@ public class BookingController {
     public BookingDto responseToBooking(@PathVariable Long bookingId,
                                         @RequestParam(name = "approved") Boolean approved,
                                         @RequestHeader("X-Sharer-User-Id") Long ownerId) {
-        return bookingService.responseToBooking(bookingId, approved, ownerId);
+        return bookingService.respond(bookingId, approved, ownerId);
     }
 
     @GetMapping("/{bookingId}")
     public BookingDto getBookingByBooker(@PathVariable Long bookingId,
                                          @RequestHeader("X-Sharer-User-Id") Long bookerId) {
-        return bookingService.getBookingByBooker(bookingId, bookerId);
+        return bookingService.getBookingByUser(bookingId, bookerId);
     }
 
     @GetMapping
     public List<BookingDto> getAllBookingsOfUser(@RequestHeader("X-Sharer-User-Id") Long userId) {
         return bookingService.getAllBookingsOfUser(userId);
+    }
+
+    @GetMapping("/owner")
+    public List<BookingDto> listForOwner(@RequestHeader("X-Sharer-User-Id") Long ownerId) {
+        return bookingService.getAllBookingsOfOwner(ownerId);
     }
 }

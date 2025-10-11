@@ -24,4 +24,10 @@ public class ErrorHandler {
     public ErrorResponse handleForbiddenException(ForbiddenException e) {
         return new ErrorResponse("Запрещено", e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleNotAvailableException(NotAvailable e) {
+        return new ErrorResponse("Уже занято", e.getMessage());
+    }
 }

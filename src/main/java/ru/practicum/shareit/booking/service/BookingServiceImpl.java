@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingRequest;
@@ -20,11 +21,14 @@ import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -35,17 +39,21 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto addBooking(BookingRequest bookingRequest, Long userId) {
+        if (bookingRequest.getStart().isAfter(bookingRequest.getEnd())) {
+            throw new ForbiddenException("start не может быть позже end");
+        }
         User booker = getUserOrThrow(userId);
         Item item = getItemOrThrow(bookingRequest.getItemId());
 
         if (item.getAvailable()) {
             Booking booking = bookingMapper.buildEntity(bookingRequest, item, booker);
-            booking.setStatus(BookingStatus.WAITING);
             booking = bookingRepository.save(booking);
 
             bookingRepository.save(booking);
+            log.info("Бронь добавлена");
             return toDto(booking);
         }
+
         throw new NotAvailable("Недоступная вещь");
     }
 
@@ -58,11 +66,17 @@ public class BookingServiceImpl implements BookingService {
         }
 
         getUserOrThrow(booking.getBooker().getId());
+        if (!booking.getStatus().equals(BookingStatus.WAITING)) {
+            throw new ForbiddenException("Статус заказа уже подтвержден");
+        }
 
         if (approve) {
             booking.setStatus(BookingStatus.APPROVED);
-            bookingRepository.save(booking);
+        } else {
+            booking.setStatus(BookingStatus.REJECTED);
         }
+        bookingRepository.save(booking);
+        log.info("Бронь подтверждена");
         return toDto(booking);
     }
 
@@ -75,6 +89,7 @@ public class BookingServiceImpl implements BookingService {
         Long ownerId = booking.getItem().getOwner().getId();
 
         if (Objects.equals(bookerId, userId) || Objects.equals(ownerId, userId)) {
+            log.info("Бронь с id={} получен, пользователь c id={}", bookingId, userId);
             return toDto(booking);
         }
 
@@ -82,19 +97,43 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getAllBookingsOfUser(Long userId) {
+    public List<BookingDto> getAllBookingsOfUser(Long userId, String state) {
         getUserOrThrow(userId);
-        return bookingRepository.findAllByBookerId(userId)
-                .stream()
+        log.info("Брони пользователя с id={} получен, state={}", userId, state);
+        LocalDateTime now = LocalDateTime.now();
+
+        return bookingRepository.findAllByBookerId(userId).stream()
+                .filter(b -> switch (state == null ? "ALL" : state.toUpperCase()) {
+                    case "CURRENT" -> !b.getStart().isAfter(now) && !b.getEnd().isBefore(now);
+                    case "PAST" -> b.getEnd().isBefore(now);
+                    case "FUTURE" -> b.getStart().isAfter(now);
+                    case "WAITING" -> b.getStatus() == BookingStatus.WAITING;
+                    case "REJECTED" -> b.getStatus() == BookingStatus.REJECTED;
+                    case "ALL" -> true;
+                    default -> true;
+                })
+                .sorted(Comparator.comparing(Booking::getStart).reversed())
                 .map(this::toDto)
                 .toList();
     }
 
     @Override
-    public List<BookingDto> getAllBookingsOfOwner(Long userId) {
+    public List<BookingDto> getAllBookingsOfOwner(Long userId, String state) {
         getUserOrThrow(userId);
-        return bookingRepository.findAllByItem_Owner_Id(userId)
-                .stream()
+        log.info("Брони владельца c id={} получены, state={}", userId, state);
+        LocalDateTime now = LocalDateTime.now();
+
+        return bookingRepository.findAllByItem_Owner_Id(userId).stream()
+                .filter(b -> switch (state == null ? "ALL" : state.toUpperCase()) {
+                    case "CURRENT" -> !b.getStart().isAfter(now) && !b.getEnd().isBefore(now);
+                    case "PAST" -> b.getEnd().isBefore(now);
+                    case "FUTURE" -> b.getStart().isAfter(now);
+                    case "WAITING" -> b.getStatus() == BookingStatus.WAITING;
+                    case "REJECTED" -> b.getStatus() == BookingStatus.REJECTED;
+                    case "ALL" -> true;
+                    default -> true;
+                })
+                .sorted(Comparator.comparing(Booking::getStart).reversed())
                 .map(this::toDto)
                 .toList();
     }
@@ -107,12 +146,12 @@ public class BookingServiceImpl implements BookingService {
 
     private Item getItemOrThrow(long id) {
         return itemRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь с id=" + id + "не найдена"));
     }
 
     private Booking getBookingOrThrow(long id) {
         return bookingRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Бронь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Бронь с id=" + id + "не найдена"));
     }
 
     private BookingDto toDto(Booking b) {

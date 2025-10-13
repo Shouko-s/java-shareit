@@ -101,18 +101,19 @@ public class BookingServiceImpl implements BookingService {
         getUserOrThrow(userId);
         log.info("Брони пользователя с id={} получен, state={}", userId, state);
         LocalDateTime now = LocalDateTime.now();
+        state = (state == null ? "ALL" : state.toUpperCase());
 
-        return bookingRepository.findAllByBookerId(userId).stream()
-                .filter(b -> switch (state == null ? "ALL" : state.toUpperCase()) {
-                    case "CURRENT" -> !b.getStart().isAfter(now) && !b.getEnd().isBefore(now);
-                    case "PAST" -> b.getEnd().isBefore(now);
-                    case "FUTURE" -> b.getStart().isAfter(now);
-                    case "WAITING" -> b.getStatus() == BookingStatus.WAITING;
-                    case "REJECTED" -> b.getStatus() == BookingStatus.REJECTED;
-                    case "ALL" -> true;
-                    default -> true;
-                })
-                .sorted(Comparator.comparing(Booking::getStart).reversed())
+        List<Booking> bookings;
+        switch (state) {
+            case "CURRENT" -> bookings = bookingRepository.findAllByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
+            case "PAST" -> bookings = bookingRepository.findAllByBookerIdAndEndBeforeOrderByStartDesc(userId, now);
+            case "FUTURE" -> bookings = bookingRepository.findAllByBookerIdAndStartAfterOrderByStartDesc(userId, now);
+            case "WAITING" -> bookings = bookingRepository.findAllByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+            case "REJECTED" -> bookings = bookingRepository.findAllByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+            default -> bookings = bookingRepository.findAllByBookerIdOrderByStartDesc(userId);
+        }
+
+        return bookings.stream()
                 .map(this::toDto)
                 .toList();
     }
@@ -122,18 +123,18 @@ public class BookingServiceImpl implements BookingService {
         getUserOrThrow(userId);
         log.info("Брони владельца c id={} получены, state={}", userId, state);
         LocalDateTime now = LocalDateTime.now();
+        state = (state == null ? "ALL" : state.toUpperCase());
 
-        return bookingRepository.findAllByItem_Owner_Id(userId).stream()
-                .filter(b -> switch (state == null ? "ALL" : state.toUpperCase()) {
-                    case "CURRENT" -> !b.getStart().isAfter(now) && !b.getEnd().isBefore(now);
-                    case "PAST" -> b.getEnd().isBefore(now);
-                    case "FUTURE" -> b.getStart().isAfter(now);
-                    case "WAITING" -> b.getStatus() == BookingStatus.WAITING;
-                    case "REJECTED" -> b.getStatus() == BookingStatus.REJECTED;
-                    case "ALL" -> true;
-                    default -> true;
-                })
-                .sorted(Comparator.comparing(Booking::getStart).reversed())
+        List<Booking> bookings;
+        switch (state) {
+            case "CURRENT" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
+            case "PAST" -> bookings = bookingRepository.findAllByItem_Owner_IdAndEndBeforeOrderByStartDesc(userId, now);
+            case "FUTURE" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStartAfterOrderByStartDesc(userId, now);
+            case "WAITING" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+            case "REJECTED" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+            default -> bookings = bookingRepository.findAllByItem_Owner_IdOrderByStartDesc(userId);
+        }
+        return bookings.stream()
                 .map(this::toDto)
                 .toList();
     }

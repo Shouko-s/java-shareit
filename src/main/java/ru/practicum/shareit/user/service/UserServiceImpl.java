@@ -8,7 +8,7 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepo;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
 
@@ -16,14 +16,14 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
-    private final UserRepo userRepo;
     private final UserMapper mapper;
+    private final UserRepository userRepository;
 
     @Override
     public UserDto create(UserDto userDto) {
         getUserByEmailOrThrow(userDto.getEmail());
 
-        User user = userRepo.create(mapper.dtoToUser(userDto));
+        User user = userRepository.save(mapper.dtoToUser(userDto));
         log.info("Пользователь был создан user={}", user);
         return mapper.userToDto(user);
     }
@@ -31,7 +31,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDto> getAllUsers() {
         log.info("Получен список пользователей");
-        return userRepo.getAllUsers().stream()
+        return userRepository.findAll().stream()
                 .map(mapper::userToDto)
                 .toList();
     }
@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserByEmail(String email) {
-        UserDto userDto = mapper.userToDto(userRepo.getUserByEmail(email)
+        UserDto userDto = mapper.userToDto(userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Пользователь с таким email не найден")));
         log.info("Пользователь был получен по email={}", email);
         return userDto;
@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
         if (name != null && !name.isBlank()) user.setName(name);
         if (email != null && !email.isBlank()) user.setEmail(email);
 
-        User updated = userRepo.updateUserById(id, user);
+        User updated = userRepository.save(user);
         log.info("пользователь был обновлен id={}", id);
         return mapper.userToDto(updated);
     }
@@ -73,20 +73,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto deleteUserById(long id) {
         User user = getUserOrThrow(id);
-        userRepo.deleteUserById(id);
+        userRepository.deleteById(id);
         log.info("Пользователь удален id={}", id);
         return mapper.userToDto(user);
     }
 
     private void getUserByEmailOrThrow(String email) {
-        userRepo.getUserByEmail(email)
+        userRepository.findByEmail(email)
                 .ifPresent(ex -> {
                     throw new AlreadyExists("Такой пользователь уже существует");
                 });
     }
 
     private User getUserOrThrow(long id) {
-        return userRepo.getUserById(id)
+        return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден"));
     }
 }

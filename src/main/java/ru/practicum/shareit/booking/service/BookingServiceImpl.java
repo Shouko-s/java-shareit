@@ -22,7 +22,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -105,11 +104,14 @@ public class BookingServiceImpl implements BookingService {
 
         List<Booking> bookings;
         switch (state) {
-            case "CURRENT" -> bookings = bookingRepository.findAllByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
+            case "CURRENT" ->
+                    bookings = bookingRepository.findAllByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
             case "PAST" -> bookings = bookingRepository.findAllByBookerIdAndEndBeforeOrderByStartDesc(userId, now);
             case "FUTURE" -> bookings = bookingRepository.findAllByBookerIdAndStartAfterOrderByStartDesc(userId, now);
-            case "WAITING" -> bookings = bookingRepository.findAllByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
-            case "REJECTED" -> bookings = bookingRepository.findAllByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+            case "WAITING" ->
+                    bookings = bookingRepository.findAllByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+            case "REJECTED" ->
+                    bookings = bookingRepository.findAllByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
             default -> bookings = bookingRepository.findAllByBookerIdOrderByStartDesc(userId);
         }
 
@@ -127,11 +129,15 @@ public class BookingServiceImpl implements BookingService {
 
         List<Booking> bookings;
         switch (state) {
-            case "CURRENT" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
+            case "CURRENT" ->
+                    bookings = bookingRepository.findAllByItem_Owner_IdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
             case "PAST" -> bookings = bookingRepository.findAllByItem_Owner_IdAndEndBeforeOrderByStartDesc(userId, now);
-            case "FUTURE" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStartAfterOrderByStartDesc(userId, now);
-            case "WAITING" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
-            case "REJECTED" -> bookings = bookingRepository.findAllByItem_Owner_IdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+            case "FUTURE" ->
+                    bookings = bookingRepository.findAllByItem_Owner_IdAndStartAfterOrderByStartDesc(userId, now);
+            case "WAITING" ->
+                    bookings = bookingRepository.findAllByItem_Owner_IdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+            case "REJECTED" ->
+                    bookings = bookingRepository.findAllByItem_Owner_IdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
             default -> bookings = bookingRepository.findAllByItem_Owner_IdOrderByStartDesc(userId);
         }
         return bookings.stream()

@@ -55,4 +55,14 @@ bin/
 # logs
 *.log
 
+# -- override earlier negations for target/build contents --
+**/src/main/**/target/**
+**/src/test/**/target/**
+**/src/**/build/**
+
+# common binaries still slipping in PR
+*.class
+*.jar
+.DS_Store
+
 

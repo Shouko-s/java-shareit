@@ -60,5 +60,12 @@ bin/
 **/src/test/**/target/**
 **/src/**/build/**
 
+**/mvnw
+**/mvnw.cmd
+**/.mvn/**
+# перебиваем раннее "!.mvn/wrapper/maven-wrapper.jar"
+**/.mvn/wrapper/maven-wrapper.jar
+
+
 
 

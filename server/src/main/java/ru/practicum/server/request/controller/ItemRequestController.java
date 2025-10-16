@@ -1,6 +1,5 @@
 package ru.practicum.server.request.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.server.request.dto.ItemRequestDto;

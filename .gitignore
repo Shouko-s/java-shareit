@@ -60,9 +60,5 @@ bin/
 **/src/test/**/target/**
 **/src/**/build/**
 
-# common binaries still slipping in PR
-*.class
-*.jar
-.DS_Store
 
 

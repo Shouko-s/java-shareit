@@ -2,6 +2,7 @@ package ru.practicum.server;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -17,9 +18,7 @@ import ru.practicum.server.user.model.User;
 import ru.practicum.server.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -70,10 +69,8 @@ class ItemRequestServiceImplGetAllTests {
         Item i2 = item(2000L, "Лобзик", bob, rNew);
         Item i3 = item(2001L, "Шуруповерт", bob, rNew);
 
-        when(itemRepository.findAllByItemRequestId(100L))
-                .thenReturn(new ArrayList<>(List.of(i1)));
-        when(itemRepository.findAllByItemRequestId(101L))
-                .thenReturn(new ArrayList<>(List.of(i2, i3)));
+        when(itemRepository.findAllByItemRequestIdIn(anyCollection()))
+                .thenReturn(new ArrayList<>(List.of(i1, i2, i3)));
 
         List<ItemRequestResponseDto> result =
                 new ItemRequestServiceImpl(userRepository, itemRepository, itemRequestRepository, new ItemRequestMapper())
@@ -90,8 +87,58 @@ class ItemRequestServiceImplGetAllTests {
         assertThat(result.get(1).getItems()).extracting("id").containsExactly(1000L);
 
         verify(itemRequestRepository, times(1)).findAllByRequesterIdNot(viewerId);
-        verify(itemRepository, times(1)).findAllByItemRequestId(101L);
-        verify(itemRepository, times(1)).findAllByItemRequestId(100L);
+
+        ArgumentCaptor<Collection<Long>> idsCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(itemRepository, times(1)).findAllByItemRequestIdIn(idsCaptor.capture());
+        assertThat(new HashSet<>(idsCaptor.getValue()))
+                .containsExactlyInAnyOrder(100L, 101L);
+
+        verifyNoMoreInteractions(itemRepository);
+    }
+
+    @Test
+    @DisplayName("getOwn: возвращает собственные запросы, отсортированные по created DESC, с ответами items (батч-загрузка)")
+    void getOwn_success_sortedWithAnswers() {
+        long userId = 42L;
+        User me = user(userId, "me");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(me));
+
+        LocalDateTime now = LocalDateTime.now();
+        ItemRequest rOld = request(100L, "старый", me, now.minusDays(3));
+        ItemRequest rNew = request(101L, "новый", me, now.minusHours(2));
+
+        when(itemRequestRepository.findAllByRequesterId(userId))
+                .thenReturn(new ArrayList<>(List.of(rOld, rNew)));
+
+        Item i1 = item(500L, "Дрель", me, rOld);
+        Item i2 = item(600L, "Лобзик", me, rNew);
+        Item i3 = item(601L, "Шуруповерт", me, rNew);
+
+        when(itemRepository.findAllByItemRequestIdIn(anyCollection()))
+                .thenReturn(new ArrayList<>(List.of(i1, i2, i3)));
+
+        List<ItemRequestResponseDto> result =
+                new ItemRequestServiceImpl(userRepository, itemRepository, itemRequestRepository, new ItemRequestMapper())
+                        .getOwn(userId);
+
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).getId()).isEqualTo(101L);
+        assertThat(result.get(0).getDescription()).isEqualTo("новый");
+        assertThat(result.get(0).getItems()).extracting("id").containsExactly(600L, 601L);
+
+        assertThat(result.get(1).getId()).isEqualTo(100L);
+        assertThat(result.get(1).getDescription()).isEqualTo("старый");
+        assertThat(result.get(1).getItems()).extracting("id").containsExactly(500L);
+
+        verify(itemRequestRepository, times(1)).findAllByRequesterId(userId);
+
+        ArgumentCaptor<Collection<Long>> idsCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(itemRepository, times(1)).findAllByItemRequestIdIn(idsCaptor.capture());
+        assertThat(new HashSet<>(idsCaptor.getValue()))
+                .containsExactlyInAnyOrder(100L, 101L);
+
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test

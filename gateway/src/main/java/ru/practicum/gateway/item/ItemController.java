@@ -1,8 +1,10 @@
 package ru.practicum.gateway.item;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.gateway.item.dto.CommentDto;
 import ru.practicum.gateway.item.dto.ItemDto;
@@ -39,7 +41,7 @@ public class ItemController {
 
     @GetMapping("/search")
     public ResponseEntity<Object> search(@RequestParam String text) {
-        return itemClient.search(text.toLowerCase());
+        return itemClient.search(text);
     }
 
     @PostMapping("/{itemId}/comment")

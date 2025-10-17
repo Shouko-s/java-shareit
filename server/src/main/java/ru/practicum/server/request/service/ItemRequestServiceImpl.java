@@ -13,8 +13,7 @@ import ru.practicum.server.request.repository.ItemRequestRepository;
 import ru.practicum.server.user.model.User;
 import ru.practicum.server.user.repository.UserRepository;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,8 +35,23 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         getUserOrThrow(userId);
         List<ItemRequest> list = itemRequestRepository.findAllByRequesterId(userId);
         list.sort(Comparator.comparing(ItemRequest::getCreated).reversed());
+
+        List<Long> ids = list.stream().map(ItemRequest::getId).toList();
+        Map<Long, List<Item>> byRequestId = new HashMap<>();
+
+        if (!ids.isEmpty()) {
+            for (Item i : itemRepository.findAllByItemRequestIdIn(ids)) {
+                if (i.getItemRequest() != null) {
+                    byRequestId
+                            .computeIfAbsent(i.getItemRequest().getId(), a -> new ArrayList<>())
+                            .add(i);
+                }
+            }
+        }
+
         return list.stream()
-                .map(r -> mapper.buildDto(r, itemRepository.findAllByItemRequestId(r.getId())))
+                .map(itemRequest -> mapper.buildDto(itemRequest, byRequestId.getOrDefault(
+                        itemRequest.getId(), List.of())))
                 .toList();
     }
 
@@ -46,8 +60,23 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         getUserOrThrow(userId);
         List<ItemRequest> list = itemRequestRepository.findAllByRequesterIdNot(userId);
         list.sort(Comparator.comparing(ItemRequest::getCreated).reversed());
+
+        List<Long> ids = list.stream().map(ItemRequest::getId).toList();
+        Map<Long, List<Item>> byRequestId = new HashMap<>();
+
+        if (!ids.isEmpty()) {
+            for (Item i : itemRepository.findAllByItemRequestIdIn(ids)) {
+                if (i.getItemRequest() != null) {
+                    byRequestId
+                            .computeIfAbsent(i.getItemRequest().getId(), a -> new ArrayList<>())
+                            .add(i);
+                }
+            }
+        }
+
         return list.stream()
-                .map(r -> mapper.buildDto(r, itemRepository.findAllByItemRequestId(r.getId())))
+                .map(itemRequest -> mapper.buildDto(itemRequest, byRequestId.getOrDefault(
+                        itemRequest.getId(), List.of())))
                 .toList();
     }
 

@@ -55,7 +55,7 @@ public class ItemClient extends BaseClient {
 
     public ResponseEntity<Object> search(String text) {
         if (text == null || text.isBlank()) return ResponseEntity.ok(List.of());
-        return get("/search?text=" + text);
+        return get("/search?text=" + text.toLowerCase());
     }
 
     public ResponseEntity<Object> addComment(CommentDto commentDto, Long itemId, Long userId) {

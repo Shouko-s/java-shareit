@@ -20,15 +20,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-
 @SpringBootTest(classes = UserServiceImpl.class)
 @Import(UserMapper.class)
-class UserServiceImplUpdateUserByIdTests {
+class UserServiceTests {
 
     @MockBean
     private UserRepository userRepository;
 
-    // helpers
     private static User user(long id, String name, String email) {
         return User.builder().id(id).name(name).email(email).build();
     }
@@ -40,13 +38,12 @@ class UserServiceImplUpdateUserByIdTests {
         User existing = user(id, "Old Name", "old@example.com");
 
         when(userRepository.findById(id)).thenReturn(Optional.of(existing));
-
         when(userRepository.findByEmail(null)).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UserServiceImpl service = new UserServiceImpl(new UserMapper(), userRepository);
 
-        UserDto patch = UserDto.builder().name("New Name").build(); // email отсутствует
+        UserDto patch = UserDto.builder().name("New Name").build();
         UserDto updated = service.updateUserById(id, patch);
 
         assertThat(updated.getId()).isEqualTo(id);
@@ -88,7 +85,6 @@ class UserServiceImplUpdateUserByIdTests {
         User someone = user(99L, "Other", "taken@example.com");
 
         when(userRepository.findById(id)).thenReturn(Optional.of(existing));
-        // твоя реализация кидает AlreadyExists при ЛЮБОМ найденном email
         when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(someone));
 
         UserServiceImpl service = new UserServiceImpl(new UserMapper(), userRepository);
@@ -114,6 +110,80 @@ class UserServiceImplUpdateUserByIdTests {
         assertThatThrownBy(() -> service.updateUserById(777L, patch))
                 .isInstanceOf(NotFoundException.class);
 
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    // -------------------- ДОБАВЛЕНО: create --------------------
+
+    @Test
+    @DisplayName("create: успех при свободном email — сохраняет и возвращает DTO")
+    void create_success() {
+        UserDto input = UserDto.builder().name("Alice").email("a@ex.com").build();
+        User saved = user(100L, "Alice", "a@ex.com");
+
+        when(userRepository.findByEmail("a@ex.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        UserServiceImpl service = new UserServiceImpl(new UserMapper(), userRepository);
+
+        UserDto out = service.create(input);
+
+        assertThat(out.getId()).isEqualTo(100L);
+        assertThat(out.getName()).isEqualTo("Alice");
+        assertThat(out.getEmail()).isEqualTo("a@ex.com");
+
+        verify(userRepository).findByEmail("a@ex.com");
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("create: email уже занят — AlreadyExists, сохранения нет")
+    void create_conflict() {
+        UserDto input = UserDto.builder().name("Bob").email("b@ex.com").build();
+        User existing = user(1L, "Other", "b@ex.com");
+
+        when(userRepository.findByEmail("b@ex.com")).thenReturn(Optional.of(existing));
+
+        UserServiceImpl service = new UserServiceImpl(new UserMapper(), userRepository);
+
+        assertThatThrownBy(() -> service.create(input))
+                .isInstanceOf(AlreadyExists.class)
+                .hasMessageContaining("уже существует");
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    // -------------------- ДОБАВЛЕНО: getUserById --------------------
+
+    @Test
+    @DisplayName("getUserById: найден — маппится в DTO")
+    void getById_success() {
+        long id = 55L;
+        User u = user(id, "Carl", "c@ex.com");
+        when(userRepository.findById(id)).thenReturn(Optional.of(u));
+
+        UserServiceImpl service = new UserServiceImpl(new UserMapper(), userRepository);
+
+        UserDto out = service.getUserById(id);
+
+        assertThat(out.getId()).isEqualTo(55L);
+        assertThat(out.getName()).isEqualTo("Carl");
+        assertThat(out.getEmail()).isEqualTo("c@ex.com");
+
+        verify(userRepository).findById(id);
+    }
+
+    @Test
+    @DisplayName("getUserById: не найден — NotFoundException")
+    void getById_notFound() {
+        when(userRepository.findById(404L)).thenReturn(Optional.empty());
+
+        UserServiceImpl service = new UserServiceImpl(new UserMapper(), userRepository);
+
+        assertThatThrownBy(() -> service.getUserById(404L))
+                .isInstanceOf(NotFoundException.class);
+
+        // никаких save не должно быть
         verify(userRepository, never()).save(any(User.class));
     }
 }

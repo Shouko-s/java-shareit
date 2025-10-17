@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest(classes = BookingServiceImpl.class)
 @Import({BookingMapper.class, ItemMapper.class, UserMapper.class})
-class BookingServiceImplAddBookingIT {
+class BookingServiceImplAddBookingTests {
 
     @MockBean
     private BookingRepository bookingRepository;

@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest(classes = ItemServiceImpl.class)
 @Import({ItemMapper.class, CommentMapper.class})
-class ItemServiceImplGetAllItemsIT {
+class ItemServiceImplGetAllItemsTests {
 
     @MockBean private ItemRepository itemRepository;
     @MockBean private UserRepository userRepository;

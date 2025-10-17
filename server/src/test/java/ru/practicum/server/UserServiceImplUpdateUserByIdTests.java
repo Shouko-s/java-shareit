@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest(classes = UserServiceImpl.class)
 @Import(UserMapper.class)
-class UserServiceImplUpdateUserByIdIT {
+class UserServiceImplUpdateUserByIdTests {
 
     @MockBean
     private UserRepository userRepository;

@@ -19,6 +19,9 @@ target/
 *.iml
 *.ipr
 
+.DS_Store
+node_modules/
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -31,3 +34,38 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ===== extra ignores (binaries, archives, logs, misc) =====
+# build dirs (дополнительно к target/build)
+out/
+bin/
+.gradle/
+
+# bytecode / archives
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar
+*.gz
+*.bz2
+*.7z
+
+# logs
+*.log
+
+# -- override earlier negations for target/build contents --
+**/src/main/**/target/**
+**/src/test/**/target/**
+**/src/**/build/**
+
+**/mvnw
+**/mvnw.cmd
+**/.mvn/**
+# перебиваем раннее "!.mvn/wrapper/maven-wrapper.jar"
+**/.mvn/wrapper/maven-wrapper.jar
+
+
+
+
